@@ -199,6 +199,10 @@ class OutputFormat:
             self.out_enum(fname, name, args)
             return self.data
 
+        if dtype == "global":
+            self.out_global(fname, name, args)
+            return self.data
+
         if dtype == "typedef":
             self.out_typedef(fname, name, args)
             return self.data
@@ -223,6 +227,9 @@ class OutputFormat:
 
     def out_enum(self, fname, name, args):
         """Outputs an enum"""
+
+    def out_global(self, fname, name, args):
+        """Outputs a global variable"""
 
     def out_typedef(self, fname, name, args):
         """Outputs a typedef"""
@@ -469,6 +476,18 @@ class RestFormat(OutputFormat):
         self.lineprefix = oldprefix
         self.out_section(args)
 
+    def out_global(self, fname, name, args):
+        oldprefix = self.lineprefix
+        ln = args.declaration_start_line
+        prototype = args.other_stuff["var_type"]
+
+        self.data += f"\n\n.. c:var:: {prototype}\n\n"
+
+        self.print_lineno(ln)
+        self.lineprefix = "  "
+        self.output_highlight(args.get('purpose', ''))
+        self.data += "\n"
+
     def out_typedef(self, fname, name, args):
 
         oldprefix = self.lineprefix
@@ -699,6 +718,18 @@ class ManFormat(OutputFormat):
         for section, text in args.sections.items():
             self.data += f'.SH "{section}"' + "\n"
             self.output_highlight(text)
+
+    def out_global(self, fname, name, args):
+        out_name = self.arg_name(args, name)
+        prototype = args.other_stuff["var_type"]
+
+        self.data += f'.TH "{self.modulename}" 9 "{out_name}" "{self.man_date}" "API Manual" LINUX' + "\n"
+
+        self.data += ".SH NAME\n"
+        self.data += f"{prototype} \\- {args['purpose']}\n"
+
+        self.data += ".SH SYNOPSIS\n"
+        self.data += f"enum {name}" + " {\n"
 
     def out_typedef(self, fname, name, args):
         module = self.modulename
